@@ -1,0 +1,113 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: gitops-test
+  namespace: default
+spec:
+  interval: 5m0s
+  url: https://github.com/giantswarm/gitops-test
+  ref:
+    branch: main
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: laszlo-app-operator
+  namespace: default
+spec:
+  image: gsoci.azurecr.io/giantswarm/app-operator
+  interval: 1m
+  provider: generic
+  exclusionList:
+    - ".*-[0-9a-f]{5,40}$"
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: laszlo-app-operator
+  namespace: default
+  labels:
+    app.kubernetes.io/component: app-operator
+spec:
+  imageRepositoryRef:
+    name: laszlo-app-operator
+  policy:
+    semver:
+      range: 6.1.x
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: laszlo-app-operator-all
+  namespace: default
+spec:
+  interval: 30m
+  sourceRef:
+    kind: GitRepository
+    name: gitops-test
+  git:
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+    push:
+      branch: main
+  update:
+    path: ./
+  policySelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values:
+          - app-operator
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: laszlo-test
+  namespace: default
+spec:
+  image: gsoci.azurecr.io/giantswarm/laszlo-test
+  interval: 1m
+  provider: generic
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: laszlo-test
+  namespace: default
+  labels:
+    app.kubernetes.io/component: laszlo-test
+spec:
+  imageRepositoryRef:
+    name: laszlo-test
+  policy:
+    semver:
+      range: 1.x.x
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: laszlo-test-asparagus
+  namespace: default
+spec:
+  interval: 30m
+  sourceRef:
+    kind: GitRepository
+    name: gitops-test
+  git:
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+    push:
+      branch: main
+  update:
+    path: ./management-clusters/asparagus
+  policySelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values:
+          - laszlo-test
