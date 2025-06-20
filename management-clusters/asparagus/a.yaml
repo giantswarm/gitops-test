@@ -1,0 +1,7 @@
+a: 1
+b: 2
+foo:
+  bar: gsoci.azurecr.io/giantswarm/laszlo-test:1.0.0 # {"$imagepolicy": "default:laszlo-test"}
+c: 3
+d:
+  e: 5
